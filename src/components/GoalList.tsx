@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Target } from 'lucide-react';
+import { Plus, Target, ArrowUpDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Goal, GoalWithCount, Tally } from '../types';
 import { GoalItem } from './GoalItem';
@@ -21,6 +21,9 @@ export function GoalList() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
+  // Reorder State
+  const [isReordering, setIsReordering] = useState(false);
+
   useEffect(() => {
     fetchGoals();
   }, []);
@@ -31,6 +34,7 @@ export function GoalList() {
       const { data: goalsData, error: goalsError } = await supabase
         .from('goals')
         .select('*')
+        .order('position', { ascending: true })
         .order('created_at', { ascending: true });
 
       if (goalsError) throw goalsError;
@@ -46,8 +50,9 @@ export function GoalList() {
         return acc;
       }, {} as Record<string, number>);
 
-      const goalsWithCounts: GoalWithCount[] = (goalsData || []).map(goal => ({
+      const goalsWithCounts: GoalWithCount[] = (goalsData || []).map((goal, index) => ({
         ...goal,
+        position: goal.position ?? index,
         count: goalCounts[goal.id] || 0
       }));
 
@@ -130,7 +135,8 @@ export function GoalList() {
           setSelectedGoal(prev => prev ? { ...prev, name, color, emoji } : null);
         }
       } else {
-        const newGoal = { name, color, emoji, user_id: user?.id };
+        const maxPos = goals.length > 0 ? Math.max(...goals.map(g => g.position || 0)) : -1;
+        const newGoal = { name, color, emoji, user_id: user?.id, position: maxPos + 1 };
         const { data, error } = await supabase
           .from('goals')
           .insert([newGoal])
@@ -138,7 +144,7 @@ export function GoalList() {
           .single();
         if (error) throw error;
         if (data) {
-          setGoals(prev => [...prev, { ...data, count: 0 }]);
+          setGoals(prev => [...prev, { ...data, count: 0, position: newGoal.position }]);
         }
       }
     } catch (error) {
@@ -156,74 +162,132 @@ export function GoalList() {
     }
   };
 
-  const openNewGoalModal = () => {
-    setEditingGoal(null);
-    setIsFormModalOpen(true);
+  const handleMoveUp = async (goalId: string) => {
+    const index = goals.findIndex(g => g.id === goalId);
+    if (index <= 0) return;
+    await swapPositions(index, index - 1);
   };
 
-  const openEditGoalModal = (goal: Goal) => {
-    setEditingGoal(goal);
-    setIsFormModalOpen(true);
+  const handleMoveDown = async (goalId: string) => {
+    const index = goals.findIndex(g => g.id === goalId);
+    if (index === -1 || index >= goals.length - 1) return;
+    await swapPositions(index, index + 1);
+  };
+
+  const swapPositions = async (indexA: number, indexB: number) => {
+    const newGoals = [...goals];
+    const goalA = newGoals[indexA];
+    const goalB = newGoals[indexB];
+
+    const posA = goalA.position || indexA;
+    const posB = goalB.position || indexB;
+    goalA.position = posB;
+    goalB.position = posA;
+
+    newGoals[indexA] = goalB;
+    newGoals[indexB] = goalA;
+    setGoals(newGoals);
+
+    try {
+      await supabase.from('goals').update({ position: posB }).eq('id', goalA.id);
+      await supabase.from('goals').update({ position: posA }).eq('id', goalB.id);
+    } catch (error) {
+      console.error('Error reordering goals:', error);
+      fetchGoals(); // revert if error
+    }
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
-        <div className="relative">
-          <div className="w-12 h-12 rounded-full absolute border-4 border-zinc-900"></div>
-          <div className="w-12 h-12 rounded-full animate-spin absolute border-4 border-white border-t-transparent"></div>
-        </div>
+        <div className="w-8 h-8 border-4 border-zinc-800 border-t-white rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-4">
-      {goals.length === 0 ? (
-        <div className="text-center py-16 bg-zinc-900/50 rounded-3xl border border-zinc-800 p-8 shadow-xl backdrop-blur-sm">
-          <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-700">
-            <Target size={24} className="text-zinc-400" />
+    <>
+      <div className="flex flex-col items-center">
+        {goals.length === 0 ? (
+          <div className="text-center py-16 px-4 bg-zinc-900/50 rounded-3xl border border-zinc-800/50 w-full mb-6">
+            <Target size={48} className="mx-auto mb-4 text-zinc-600" />
+            <h2 className="text-xl font-bold text-white mb-2">No goals yet</h2>
+            <p className="text-zinc-400 mb-6 max-w-xs mx-auto text-sm">Start tracking your daily habits by creating your first goal.</p>
+            <button
+              onClick={() => { setEditingGoal(null); setIsFormModalOpen(true); }}
+              className="inline-flex items-center justify-center bg-white text-black font-semibold py-3 px-6 rounded-full hover:bg-zinc-200 transition-colors shadow-lg"
+            >
+              <Plus size={20} className="mr-2" />
+              Add First Goal
+            </button>
           </div>
-          <h3 className="text-xl text-white font-bold mb-2">No Goals Found</h3>
-          <p className="text-zinc-400 mb-6">Create your first goal to get started!</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {goals.map(goal => (
-            <GoalItem 
-              key={goal.id} 
-              goal={goal} 
-              onAdd={handleAddTally} 
-              onRemove={handleRemoveTally}
-              onClick={handleOpenHistory}
-            />
-          ))}
-        </div>
-      )}
+        ) : (
+          <div className="w-full space-y-4 relative">
+            {goals.map((goal, i) => (
+              <GoalItem 
+                key={goal.id} 
+                goal={goal} 
+                isReordering={isReordering}
+                isFirst={i === 0}
+                isLast={i === goals.length - 1}
+                onAdd={handleAddTally} 
+                onRemove={handleRemoveTally} 
+                onClick={handleOpenHistory}
+                onMoveUp={handleMoveUp}
+                onMoveDown={handleMoveDown}
+              />
+            ))}
 
-      <button
-        onClick={openNewGoalModal}
-        className="w-full py-4 border-2 border-dashed border-zinc-800 text-zinc-400 rounded-2xl hover:border-zinc-600 hover:text-white transition-colors flex items-center justify-center gap-2 font-medium"
-      >
-        <Plus size={20} />
-        Add New Goal
-      </button>
+            <button
+              onClick={() => {
+                if (!isReordering) {
+                  setEditingGoal(null);
+                  setIsFormModalOpen(true);
+                } else {
+                  setIsReordering(false);
+                }
+              }}
+              className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold py-4 rounded-2xl flex items-center justify-center transition-colors border border-zinc-800 mt-2 shadow-lg group"
+            >
+              {isReordering ? (
+                <span>Done Reordering</span>
+              ) : (
+                <>
+                  <Plus size={20} className="mr-2 group-hover:scale-110 transition-transform" />
+                  Add New Goal
+                </>
+              )}
+            </button>
 
-      <HistoryModal 
-        isOpen={isHistoryModalOpen}
-        onClose={() => setIsHistoryModalOpen(false)}
-        goal={selectedGoal}
-        tallies={historyTallies}
-        onEdit={openEditGoalModal}
-        onDelete={handleDeleteGoal}
-      />
+            {goals.length > 1 && (
+              <div className="mt-4 pt-4 border-t border-zinc-900 flex justify-center pb-4">
+                <button 
+                  onClick={() => setIsReordering(!isReordering)}
+                  className={`text-sm flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${isReordering ? 'bg-white text-black font-semibold' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'}`}
+                >
+                  <ArrowUpDown size={16} />
+                  {isReordering ? 'Finish Reordering' : 'Reorder Goals'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-      <GoalFormModal
-        isOpen={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
+      <GoalFormModal 
+        isOpen={isFormModalOpen} 
+        onClose={() => setIsFormModalOpen(false)} 
         onSubmit={handleSaveGoal}
         editingGoal={editingGoal}
       />
-    </div>
+      <HistoryModal 
+        isOpen={isHistoryModalOpen} 
+        onClose={() => setIsHistoryModalOpen(false)} 
+        goal={selectedGoal} 
+        tallies={historyTallies}
+        onEdit={(g) => { setIsHistoryModalOpen(false); setEditingGoal(g); setIsFormModalOpen(true); }}
+        onDelete={handleDeleteGoal}
+      />
+    </>
   );
 }

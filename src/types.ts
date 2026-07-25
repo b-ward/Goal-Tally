@@ -3,6 +3,7 @@ export interface Goal {
   name: string;
   color: string;
   emoji: string;
+  position?: number;
   created_at: string;
 }
 

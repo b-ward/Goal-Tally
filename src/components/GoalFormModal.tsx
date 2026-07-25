@@ -115,7 +115,7 @@ export function GoalFormModal({ isOpen, onClose, onSubmit, editingGoal }: GoalFo
               <label className="block text-sm font-medium text-zinc-400 mb-2">
                 Color Theme
               </label>
-              <div className="flex gap-3 bg-black p-3 rounded-xl border border-zinc-800 justify-between">
+              <div className="grid grid-cols-6 gap-3 bg-black p-3 rounded-xl border border-zinc-800 place-items-center">
                 {(Object.keys(themeColors) as ThemeColorKey[]).map(colorKey => (
                   <button
                     key={colorKey}

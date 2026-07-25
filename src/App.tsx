@@ -20,21 +20,21 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-black text-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans selection:bg-zinc-800">
       <div className="max-w-md mx-auto relative">
-        <header className="mb-10 relative z-10 flex flex-col items-center pt-4">
+        <header className="mb-6 relative z-10 flex flex-col items-center pt-2">
           {user && (
             <button 
               onClick={signOut}
-              className="absolute top-4 right-0 text-zinc-500 hover:text-white p-2 rounded-full hover:bg-zinc-900 transition-colors"
+              className="absolute top-2 right-0 text-zinc-500 hover:text-white p-2 rounded-full hover:bg-zinc-900 transition-colors"
               title="Sign Out"
             >
               <LogOut size={20} />
             </button>
           )}
           
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-br from-white to-zinc-400 bg-clip-text text-transparent drop-shadow-sm pb-2">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-br from-white to-zinc-400 bg-clip-text text-transparent drop-shadow-sm pb-1">
             Goal Tally
           </h1>
-          <p className="mt-2 text-zinc-400 text-sm font-medium tracking-wide">Keep track of your goals</p>
+          <p className="mt-1 text-zinc-500 text-xs font-medium tracking-wide">Keep track of your goals</p>
         </header>
 
         <main className="relative z-10">
