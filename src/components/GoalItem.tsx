@@ -48,8 +48,8 @@ export function GoalItem({ goal, isReordering, isFirst, isLast, onAdd, onRemove,
             if (!isReordering) onClick(goal.id);
           }}
         >
-          <div className="flex items-start gap-2.5 mb-2 w-full justify-center">
-            <span className="text-2xl drop-shadow-sm shrink-0 mt-0.5">{emoji}</span>
+          <div className="flex items-center gap-2.5 mb-2 w-full justify-center">
+            <span className="text-2xl drop-shadow-sm shrink-0 leading-none">{emoji}</span>
             <h3 className={`text-xl sm:text-2xl font-bold tracking-wide drop-shadow-sm leading-tight text-left break-words min-w-0 flex-shrink overflow-hidden ${theme.text}`}>{goal.name}</h3>
           </div>
           <p className={`text-sm sm:text-base font-semibold bg-black/20 inline-block px-3 py-1 rounded-full ${theme.text} shadow-inner`}>

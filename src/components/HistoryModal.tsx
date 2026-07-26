@@ -21,18 +21,16 @@ export function HistoryModal({ isOpen, onClose, goal, tallies, onEdit, onDelete 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-opacity">
       <div className={`bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl border ${theme.border} overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in duration-200`}>
-        <div className={`p-6 bg-zinc-950 flex justify-between items-center border-b ${theme.border} relative`}>
-          <h2 className="text-xl font-bold text-white relative z-10 flex items-center gap-2">
-            <span className="text-2xl">{emoji}</span>
-            <span className={theme.text}>{goal.name}</span>
-          </h2>
-          <div className="flex items-center gap-1 sm:gap-2">
+        <div className={`px-4 py-3 bg-zinc-950 flex items-center gap-2 border-b ${theme.border} relative`}>
+          <span className="text-xl shrink-0">{emoji}</span>
+          <span className={`font-bold text-white flex-1 min-w-0 truncate text-base`} title={goal.name}>{goal.name}</span>
+          <div className="flex items-center gap-1 shrink-0">
             <button 
               onClick={() => onEdit(goal)}
               className="text-zinc-400 hover:text-white p-2 rounded-full hover:bg-zinc-800 transition-colors"
               title="Edit Goal"
             >
-              <Edit2 size={18} />
+              <Edit2 size={16} />
             </button>
             <button 
               onClick={() => {
@@ -44,14 +42,14 @@ export function HistoryModal({ isOpen, onClose, goal, tallies, onEdit, onDelete 
               className="text-zinc-400 hover:text-red-500 p-2 rounded-full hover:bg-zinc-800 transition-colors"
               title="Delete Goal"
             >
-              <Trash2 size={18} />
+              <Trash2 size={16} />
             </button>
-            <div className="w-px h-6 bg-zinc-800 mx-1"></div>
+            <div className="w-px h-5 bg-zinc-800 mx-0.5"></div>
             <button 
               onClick={onClose}
               className="text-zinc-400 hover:text-white p-2 rounded-full hover:bg-zinc-800 transition-colors"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>

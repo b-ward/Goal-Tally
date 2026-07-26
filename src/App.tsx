@@ -18,23 +18,24 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans selection:bg-zinc-800">
+    <div className="min-h-screen bg-black text-slate-50 py-4 px-4 sm:px-6 font-sans selection:bg-zinc-800">
       <div className="max-w-md mx-auto relative">
-        <header className="mb-6 relative z-10 flex flex-col items-center pt-2">
+        <header className="mb-5 relative z-10 flex items-center justify-between pt-2">
+          <div className="flex items-baseline gap-2.5">
+            <h1 className="text-lg font-bold tracking-tight text-white">
+              Goal Tally
+            </h1>
+            <span className="text-zinc-600 text-xs font-medium tracking-wide hidden sm:inline">Keep track of your goals</span>
+          </div>
           {user && (
             <button 
               onClick={signOut}
-              className="absolute top-2 right-0 text-zinc-500 hover:text-white p-2 rounded-full hover:bg-zinc-900 transition-colors"
+              className="text-zinc-500 hover:text-white p-2 rounded-full hover:bg-zinc-900 transition-colors"
               title="Sign Out"
             >
-              <LogOut size={20} />
+              <LogOut size={18} />
             </button>
           )}
-          
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-br from-white to-zinc-400 bg-clip-text text-transparent drop-shadow-sm pb-1">
-            Goal Tally
-          </h1>
-          <p className="mt-1 text-zinc-500 text-xs font-medium tracking-wide">Keep track of your goals</p>
         </header>
 
         <main className="relative z-10">
