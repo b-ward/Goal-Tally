@@ -7,12 +7,14 @@ import type { ThemeColorKey } from '../lib/theme';
 interface GoalFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (name: string, color: string, emoji: string) => Promise<void>;
+  onSubmit: (name: string, color: string, emoji: string, target: number | null) => Promise<boolean>;
   editingGoal?: Goal | null;
 }
 
 export function GoalFormModal({ isOpen, onClose, onSubmit, editingGoal }: GoalFormModalProps) {
   const [name, setName] = useState('');
+  const [target, setTarget] = useState('');
+  const [saveError, setSaveError] = useState(false);
   const [selectedColor, setSelectedColor] = useState<ThemeColorKey>('blue');
   const [selectedEmoji, setSelectedEmoji] = useState('🎯');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,6 +22,8 @@ export function GoalFormModal({ isOpen, onClose, onSubmit, editingGoal }: GoalFo
   useEffect(() => {
     if (isOpen) {
       setName(editingGoal?.name || '');
+      setTarget(editingGoal?.target?.toString() ?? '');
+      setSaveError(false);
       // Fallback to blue if the color is an old string
       const color = editingGoal?.color as ThemeColorKey;
       setSelectedColor(themeColors[color] ? color : 'blue');
@@ -34,14 +38,16 @@ export function GoalFormModal({ isOpen, onClose, onSubmit, editingGoal }: GoalFo
     if (!name.trim()) return;
     
     setIsSubmitting(true);
-    await onSubmit(name.trim(), selectedColor, selectedEmoji);
+    setSaveError(false);
+    const saved = await onSubmit(name.trim(), selectedColor, selectedEmoji, target === '' ? null : Number(target));
     setIsSubmitting(false);
-    onClose();
+    if (saved) onClose();
+    else setSaveError(true);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-opacity">
-      <div className="bg-zinc-900 w-full max-w-sm rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="bg-zinc-900 w-full max-w-sm max-h-[90dvh] rounded-3xl shadow-2xl border border-zinc-800 overflow-y-auto animate-in fade-in zoom-in duration-200">
         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Target size={20} className={themeColors[selectedColor]?.text || 'text-zinc-400'} />
@@ -77,6 +83,14 @@ export function GoalFormModal({ isOpen, onClose, onSubmit, editingGoal }: GoalFo
                 />
               </div>
             </div>
+
+            <label className="block text-sm font-medium text-zinc-400">
+              Target (optional)
+              <input type="number" min={1} max={2147483647} step={1} inputMode="numeric"
+                value={target} onChange={e => setTarget(e.target.value)} placeholder="e.g. 100"
+                className="mt-1.5 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white"
+              />
+            </label>
 
             <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">
@@ -129,6 +143,7 @@ export function GoalFormModal({ isOpen, onClose, onSubmit, editingGoal }: GoalFo
             </div>
           </div>
 
+          {saveError && <p role="alert" className="mt-4 text-sm text-red-300">Could not save this goal. Try again.</p>}
           <div className="mt-8">
             <button
               type="submit"

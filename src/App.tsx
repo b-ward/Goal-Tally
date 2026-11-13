@@ -25,7 +25,6 @@ function AppContent() {
             <h1 className="text-lg font-bold tracking-tight text-white">
               Goal Tally
             </h1>
-            <span className="text-zinc-600 text-xs font-medium tracking-wide hidden sm:inline">Keep track of your goals</span>
           </div>
           {user && (
             <button 
@@ -39,7 +38,7 @@ function AppContent() {
         </header>
 
         <main className="relative z-10">
-          {user ? <GoalList /> : <Login />}
+          {user ? <GoalList key={user.id} /> : <Login />}
         </main>
       </div>
     </div>
