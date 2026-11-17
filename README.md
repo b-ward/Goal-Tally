@@ -10,7 +10,9 @@ Choose **Restore** next to an archive or backup to make those goals active again
 
 ### Supabase setup
 
-Before deploying this version, run any unapplied migrations in order in the Supabase **SQL Editor**: [archive](supabase/migrations/20261113000000_yearly_goal_archive.sql), [restore](supabase/migrations/20261113000001_restore_goal_archive.sql), [archive order](supabase/migrations/20261113000002_order_goal_archives.sql), [named archives](supabase/migrations/20261113000003_named_goal_archives.sql), then [goal targets and tracking period](supabase/migrations/20261113000004_goal_targets_and_tracking_period.sql). Existing yearly archives without a creation date are ordered by year beneath dated entries.
+If you haven't applied any of the five feature migrations, run the entire [combined upgrade script](supabase/upgrade_goal_tally_archives_and_targets.sql) once in the Supabase **SQL Editor**. It applies all five in one transaction.
+
+If you've already applied some of the migrations, run only the remaining files from [the migrations folder](supabase/migrations) in filename order. Existing yearly archives without a creation date are ordered by year beneath dated entries.
 
 Test the migration on a staging copy first if available. It expects the existing `public.goals` and `public.tallies` tables, with UUID goal IDs and goal owners. Older app versions can still display archived goals in their active list, so reload or update any installed copies after deploying.
 

@@ -18,6 +18,7 @@ export function GoalList() {
   const [editingPeriod, setEditingPeriod] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const goalsRequest = useRef<AbortController | null>(null);
   const [actionError, setActionError] = useState('');
   const [showArchive, setShowArchive] = useState(() => window.location.hash === '#archive');
   const [archivedGoals, setArchivedGoals] = useState<ArchivedGoal[]>([]);
@@ -48,31 +49,47 @@ export function GoalList() {
   const [isReordering, setIsReordering] = useState(false);
 
   const fetchGoals = useCallback(async () => {
+    goalsRequest.current?.abort();
+    const request = new AbortController();
+    goalsRequest.current = request;
     try {
       setLoading(true);
       setLoadError(false);
-      const { data, error } = await supabase.rpc('get_goal_results', { p_archived: false });
+      // GET enables Supabase's built-in retries for transient failures on reads.
+      const { data, error } = await supabase
+        .rpc('get_goal_results', { p_archived: false }, { get: true })
+        .abortSignal(request.signal);
+      if (request.signal.aborted) return;
       if (error) throw error;
       setGoals((data as GoalWithCount[]).map((goal, index) => ({
         ...goal, position: goal.position ?? index,
       })));
     } catch (error) {
+      if (request.signal.aborted) return;
       setLoadError(true);
       console.error('Error fetching data:', error);
     } finally {
-      setLoading(false);
+      if (!request.signal.aborted) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void fetchGoals();
+    return () => goalsRequest.current?.abort();
   }, [fetchGoals]);
+
+  useEffect(() => {
+    if (!loadError) return;
+    const retryOnReconnect = () => void fetchGoals();
+    window.addEventListener('online', retryOnReconnect);
+    return () => window.removeEventListener('online', retryOnReconnect);
+  }, [loadError, fetchGoals]);
 
   const fetchTrackingPeriod = useCallback(async () => {
     setPeriodLoading(true);
     setPeriodError(false);
     try {
-      const { data, error } = await supabase.rpc('get_goal_tracking_period');
+      const { data, error } = await supabase.rpc('get_goal_tracking_period', {}, { get: true });
       if (error) throw error;
       setTrackingPeriod(data as TrackingPeriod | null);
     } catch (error) {
@@ -91,7 +108,7 @@ export function GoalList() {
     setArchiveLoading(true);
     setArchiveError(false);
     try {
-      const { data, error } = await supabase.rpc('get_goal_results', { p_archived: true });
+      const { data, error } = await supabase.rpc('get_goal_results', { p_archived: true }, { get: true });
       if (error) throw error;
       setArchivedGoals(data as ArchivedGoal[]);
     } catch (error) {
